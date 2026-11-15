@@ -1,0 +1,6 @@
+{
+  "name": "Loka Petualang",
+  "description": "Game petualangan interaktif ramah pemula dengan pilihan cerita, peta wilayah, inventaris item, dan simpan progres cloud.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

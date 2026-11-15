@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">Loka Petualang</string>
+    <string name="auth_welcome_title">Selamat Datang di Loka Petualang</string>
+    <string name="auth_welcome_subtitle">Game petualangan interaktif yang ramah pemula. Baca kisah singkat, pecahkan teka-teki seru, dan simpan progresmu ke awan.</string>
+    <string name="auth_google_button">Masuk dengan Google</string>
+    <string name="auth_checking_session">Memeriksa sesi Google…</string>
+    <string name="nav_adventure">Petualangan</string>
+    <string name="nav_map">Peta</string>
+    <string name="nav_bag">Tas</string>
+    <string name="nav_journal">Jurnal</string>
+    <string name="camp_rest_button">Kemah</string>
+    <string name="sign_out_button">Keluar Akun</string>
+    <string name="developer_credit_label">Dikembangkan oleh @ubaidbadrudin</string>
+    <string name="developer_handle">\@ubaidbadrudin</string>
+    <string name="developer_copyright">Copyright @ubaidbadrudin | 2026</string>
+</resources>

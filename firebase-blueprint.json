@@ -1,0 +1,213 @@
+{
+  "entities": {
+    "PlayerProfile": {
+      "title": "PlayerProfile",
+      "description": "Profil petualang dan progres permainan yang tersimpan di cloud.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID pemilik profil dari Firebase Auth."
+        },
+        "heroName": {
+          "type": "string",
+          "description": "Nama panggilan petualang."
+        },
+        "avatarEmoji": {
+          "type": "string",
+          "description": "Ikon avatar pilihan pemain."
+        },
+        "level": {
+          "type": "integer",
+          "description": "Level karakter saat ini."
+        },
+        "xp": {
+          "type": "integer",
+          "description": "Poin pengalaman terkumpul."
+        },
+        "hp": {
+          "type": "integer",
+          "description": "Nyawa karakter saat ini."
+        },
+        "maxHp": {
+          "type": "integer",
+          "description": "Batas nyawa maksimal karakter."
+        },
+        "energy": {
+          "type": "integer",
+          "description": "Energi eksplorasi saat ini."
+        },
+        "maxEnergy": {
+          "type": "integer",
+          "description": "Batas energi maksimal karakter."
+        },
+        "coins": {
+          "type": "integer",
+          "description": "Koin emas yang dikumpulkan."
+        },
+        "currentRegionId": {
+          "type": "string",
+          "enum": ["forest", "ruins", "summit"],
+          "description": "ID wilayah aktif yang sedang dijelajahi."
+        },
+        "currentNodeId": {
+          "type": "string",
+          "description": "ID bab cerita aktif."
+        },
+        "visitedNodeIds": {
+          "type": "array",
+          "description": "Daftar ID bab cerita yang telah dikunjungi (maks 50)."
+        },
+        "completedRegionIds": {
+          "type": "array",
+          "description": "Daftar ID wilayah yang telah diselesaikan (maks 10)."
+        },
+        "tutorialDone": {
+          "type": "boolean",
+          "description": "Menandakan panduan pemula telah diselesaikan atau ditutup."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Waktu pembuatan dokumen dari FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Waktu pembaruan terakhir dari FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "heroName",
+        "avatarEmoji",
+        "level",
+        "xp",
+        "hp",
+        "maxHp",
+        "energy",
+        "maxEnergy",
+        "coins",
+        "currentRegionId",
+        "currentNodeId",
+        "visitedNodeIds",
+        "completedRegionIds",
+        "tutorialDone",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "InventoryItem": {
+      "title": "InventoryItem",
+      "description": "Item di dalam tas ransel petualang.",
+      "type": "object",
+      "properties": {
+        "itemKey": {
+          "type": "string",
+          "description": "Kunci unik jenis item."
+        },
+        "name": {
+          "type": "string",
+          "description": "Nama tampilan item."
+        },
+        "description": {
+          "type": "string",
+          "description": "Deskripsi fungsi item untuk pemula."
+        },
+        "category": {
+          "type": "string",
+          "enum": ["potion", "key", "relic", "snack"],
+          "description": "Kategori item."
+        },
+        "quantity": {
+          "type": "integer",
+          "description": "Jumlah item dalam tas."
+        },
+        "healAmount": {
+          "type": "integer",
+          "description": "Nilai pemulihan HP saat digunakan."
+        },
+        "energyAmount": {
+          "type": "integer",
+          "description": "Nilai pemulihan energi saat digunakan."
+        },
+        "iconKey": {
+          "type": "string",
+          "description": "Kunci ikon tampilan."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Waktu item diperoleh dari FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Waktu perubahan jumlah dari FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "itemKey",
+        "name",
+        "description",
+        "category",
+        "quantity",
+        "healAmount",
+        "energyAmount",
+        "iconKey",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "JournalEntry": {
+      "title": "JournalEntry",
+      "description": "Catatan milestone petualangan pemain.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Judul peristiwa petualangan."
+        },
+        "summary": {
+          "type": "string",
+          "description": "Ringkasan pilihan atau temuan pemain."
+        },
+        "regionId": {
+          "type": "string",
+          "enum": ["forest", "ruins", "summit"],
+          "description": "Wilayah tempat peristiwa terjadi."
+        },
+        "rewardXp": {
+          "type": "integer",
+          "description": "XP yang diperoleh dari peristiwa."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Waktu catatan dibuat dari FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "title",
+        "summary",
+        "regionId",
+        "rewardXp",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/PlayerProfile" },
+      "description": "Profil dan status progres petualang per pengguna."
+    },
+    "/users/{userId}/inventory/{itemId}": {
+      "schema": { "$ref": "#/entities/InventoryItem" },
+      "description": "Subkoleksi item tas ransel milik petualang."
+    },
+    "/users/{userId}/journal/{entryId}": {
+      "schema": { "$ref": "#/entities/JournalEntry" },
+      "description": "Subkoleksi catatan jurnal petualangan milik pengguna."
+    }
+  }
+}

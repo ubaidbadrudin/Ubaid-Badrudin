@@ -1,0 +1,163 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+    }
+
+    function isValidRegion(regionId) {
+      return regionId in ['forest', 'ruins', 'summit'];
+    }
+
+    function isValidPlayerProfile(data) {
+      return data.userId is string && data.userId == request.auth.uid && data.userId.size() <= 128 &&
+             data.heroName is string && data.heroName.size() >= 2 && data.heroName.size() <= 30 &&
+             data.avatarEmoji is string && data.avatarEmoji.size() >= 1 && data.avatarEmoji.size() <= 12 &&
+             data.level is int && data.level >= 1 && data.level <= 99 &&
+             data.xp is int && data.xp >= 0 && data.xp <= 100000 &&
+             data.maxHp is int && data.maxHp >= 10 && data.maxHp <= 500 &&
+             data.hp is int && data.hp >= 0 && data.hp <= data.maxHp &&
+             data.maxEnergy is int && data.maxEnergy >= 5 && data.maxEnergy <= 200 &&
+             data.energy is int && data.energy >= 0 && data.energy <= data.maxEnergy &&
+             data.coins is int && data.coins >= 0 && data.coins <= 1000000 &&
+             data.currentRegionId is string && isValidRegion(data.currentRegionId) &&
+             data.currentNodeId is string && data.currentNodeId.size() >= 1 && data.currentNodeId.size() <= 64 &&
+             data.currentNodeId.matches('^[a-zA-Z0-9_\\-]+$') &&
+             data.visitedNodeIds is list && data.visitedNodeIds.size() <= 50 &&
+             (data.visitedNodeIds.size() == 0 || data.visitedNodeIds[0] is string) &&
+             data.completedRegionIds is list && data.completedRegionIds.size() <= 10 &&
+             (data.completedRegionIds.size() == 0 || data.completedRegionIds[0] is string) &&
+             data.tutorialDone is bool &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidInventoryItem(data) {
+      return data.itemKey is string && data.itemKey.size() >= 1 && data.itemKey.size() <= 50 &&
+             data.itemKey.matches('^[a-zA-Z0-9_\\-]+$') &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 60 &&
+             data.description is string && data.description.size() >= 1 && data.description.size() <= 220 &&
+             data.category is string && data.category in ['potion', 'key', 'relic', 'snack'] &&
+             data.quantity is int && data.quantity >= 1 && data.quantity <= 99 &&
+             data.healAmount is int && data.healAmount >= 0 && data.healAmount <= 200 &&
+             data.energyAmount is int && data.energyAmount >= 0 && data.energyAmount <= 200 &&
+             data.iconKey is string && data.iconKey.size() >= 1 && data.iconKey.size() <= 40 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidJournalEntry(data) {
+      return data.title is string && data.title.size() >= 1 && data.title.size() <= 100 &&
+             data.summary is string && data.summary.size() >= 1 && data.summary.size() <= 300 &&
+             data.regionId is string && isValidRegion(data.regionId) &&
+             data.rewardXp is int && data.rewardXp >= 0 && data.rewardXp <= 1000 &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+
+      allow create: if isOwner(userId) &&
+                       incoming().keys().hasAll([
+                         'userId', 'heroName', 'avatarEmoji', 'level', 'xp',
+                         'hp', 'maxHp', 'energy', 'maxEnergy', 'coins',
+                         'currentRegionId', 'currentNodeId', 'visitedNodeIds',
+                         'completedRegionIds', 'tutorialDone', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'heroName', 'avatarEmoji', 'level', 'xp',
+                         'hp', 'maxHp', 'energy', 'maxEnergy', 'coins',
+                         'currentRegionId', 'currentNodeId', 'visitedNodeIds',
+                         'completedRegionIds', 'tutorialDone', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidPlayerProfile(incoming());
+
+      allow update: if isOwner(userId) &&
+                       isValidPlayerProfile(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt && (
+                         // Action: Customize hero identity or dismiss beginner guide
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'heroName', 'avatarEmoji', 'tutorialDone', 'updatedAt'
+                         ]) ||
+                         // Action: Advance adventure progress, rest, or reset journey
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'level', 'xp', 'hp', 'maxHp', 'energy', 'maxEnergy', 'coins',
+                           'currentRegionId', 'currentNodeId', 'visitedNodeIds',
+                           'completedRegionIds', 'tutorialDone', 'updatedAt'
+                         ])
+                       );
+
+      allow delete: if isOwner(userId);
+
+      match /inventory/{itemId} {
+        allow get: if isOwner(userId) && isValidId(itemId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(itemId) &&
+                         incoming().keys().hasAll([
+                           'itemKey', 'name', 'description', 'category',
+                           'quantity', 'healAmount', 'energyAmount', 'iconKey',
+                           'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'itemKey', 'name', 'description', 'category',
+                           'quantity', 'healAmount', 'energyAmount', 'iconKey',
+                           'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidInventoryItem(incoming());
+
+        allow update: if isOwner(userId) &&
+                         isValidId(itemId) &&
+                         isValidInventoryItem(incoming()) &&
+                         incoming().itemKey == existing().itemKey &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['quantity', 'updatedAt']);
+
+        allow delete: if isOwner(userId) && isValidId(itemId);
+      }
+
+      match /journal/{entryId} {
+        allow get: if isOwner(userId) && isValidId(entryId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(entryId) &&
+                         incoming().keys().hasAll([
+                           'title', 'summary', 'regionId', 'rewardXp', 'createdAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'title', 'summary', 'regionId', 'rewardXp', 'createdAt'
+                         ]) &&
+                         isValidJournalEntry(incoming());
+
+        allow update: if false;
+        allow delete: if isOwner(userId) && isValidId(entryId);
+      }
+    }
+  }
+}
